@@ -1,0 +1,94 @@
+# Don't handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* -text
+
+*.cs        text eol=lf diff=csharp
+*.shader    text eol=lf
+*.cginc     text eol=lf
+*.hlsl      text eol=lf
+*.compute   text eol=lf
+*.meta      text eol=lf
+
+# base git lfs attributes to store binary files in lfs
+*.3[dD][sS] filter=lfs diff=lfs merge=lfs -text lockable
+*.7[zZ] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][aA][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][iI] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][iI][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][pP][kK] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][sS][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[aA][vV][iI] filter=lfs diff=lfs merge=lfs -text lockable
+*.[bB][mM][pP] filter=lfs diff=lfs merge=lfs -text lockable
+*.[bB][zZ]2 filter=lfs diff=lfs merge=lfs -text lockable
+*.[cC]4[dD] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][bB] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][aA][eE] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][aA][tT] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][dD][sS] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][lL][lL] filter=lfs diff=lfs merge=lfs -text lockable
+*.[dD][xX][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[eE][pP][sS] filter=lfs diff=lfs merge=lfs -text lockable
+*.[eE][xX][eE] filter=lfs diff=lfs merge=lfs -text lockable
+*.[eE][xX][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[fF][bB][xX] filter=lfs diff=lfs merge=lfs -text lockable
+*.[fF][lL][vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[gG][iI][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[gG][zZ] filter=lfs diff=lfs merge=lfs -text lockable
+*.[hH][dD][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[jJ][aA][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[jJ][pP][gG] filter=lfs diff=lfs merge=lfs -text lockable
+*.[lL][fF][sS].* filter=lfs diff=lfs merge=lfs -text lockable
+*.[lL][iI][bB] filter=lfs diff=lfs merge=lfs -text lockable
+*.[lL][wW][oO] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM]4[aA] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM]4[vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][aA] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][aA][xX] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][bB] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][oO][dD] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][oO][vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][pP]3 filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][pP]4 filter=lfs diff=lfs merge=lfs -text lockable
+*.[mM][pP][gG] filter=lfs diff=lfs merge=lfs -text lockable
+*.[oO][bB][jJ] filter=lfs diff=lfs merge=lfs -text lockable
+*.[oO][gG][gG] filter=lfs diff=lfs merge=lfs -text lockable
+*.[oO][gG][vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[oO][tT][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][bB] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][dD][bB] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][dD][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][nN][gG] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][sS][dD] filter=lfs diff=lfs merge=lfs -text lockable
+*.[pP][vV][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[rR][aA][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[rR][aA][wW] filter=lfs diff=lfs merge=lfs -text lockable
+*.[sS][oO] filter=lfs diff=lfs merge=lfs -text lockable
+*.[tT][aA][rR] filter=lfs diff=lfs merge=lfs -text lockable
+*.[tT][gG][aA] filter=lfs diff=lfs merge=lfs -text lockable
+*.[tT][iI][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[tT][tT][fF] filter=lfs diff=lfs merge=lfs -text lockable
+*.[wW][aA][vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[wW][mM][vV] filter=lfs diff=lfs merge=lfs -text lockable
+*.[zZ][iI][pP] filter=lfs diff=lfs merge=lfs -text lockable
+*.aiff filter=lfs diff=lfs merge=lfs -text lockable
+*.apng filter=lfs diff=lfs merge=lfs -text lockable
+*.assetbundle filter=lfs diff=lfs merge=lfs -text lockable
+*.astc filter=lfs diff=lfs merge=lfs -text lockable
+*.blend filter=lfs diff=lfs merge=lfs -text lockable
+*.bundle filter=lfs diff=lfs merge=lfs -text lockable
+*.bytes filter=lfs diff=lfs merge=lfs -text lockable
+*.caffemodel filter=lfs diff=lfs merge=lfs -text lockable
+*.cubemap filter=lfs diff=lfs merge=lfs -text lockable
+*.dylib filter=lfs diff=lfs merge=lfs -text lockable
+*.jpeg filter=lfs diff=lfs merge=lfs -text lockable
+*.lwo2 filter=lfs diff=lfs merge=lfs -text lockable
+*.mjpeg filter=lfs diff=lfs merge=lfs -text lockable
+*.mpeg filter=lfs diff=lfs merge=lfs -text lockable
+*.svgz filter=lfs diff=lfs merge=lfs -text lockable
+*.tiff filter=lfs diff=lfs merge=lfs -text lockable
+*.unitypackage filter=lfs diff=lfs merge=lfs -text lockable
+*.webm filter=lfs diff=lfs merge=lfs -text lockable
+*.webp filter=lfs diff=lfs merge=lfs -text lockable
+LightingData.asset filter=lfs diff=lfs merge=lfs -text lockable
+NavMesh.asset filter=lfs diff=lfs merge=lfs -text lockable
