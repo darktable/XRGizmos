@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace com.darktable.utility.xrgizmos.example
 {
-    public class XRWireSphere : MonoBehaviour
+    public class XRWireHemisphere : MonoBehaviour
     {
         [SerializeField] private Color color = Color.red;
 
@@ -22,7 +22,7 @@ namespace com.darktable.utility.xrgizmos.example
         {
             var pos = _transform.position;
             var rot = _transform.rotation;
-            XRGizmos.DrawWireSphere(pos, rot, _transform.lossyScale.magnitude, color, thickness);
+            XRGizmos.DrawWireHemisphere(pos, rot, _transform.lossyScale.magnitude, color, thickness);
             XRGizmos.DrawCube(pos, rot, cubeSize, cubeColor);
         }
     }
