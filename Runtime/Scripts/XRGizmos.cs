@@ -35,6 +35,9 @@ namespace com.darktable.utility
         private static MaterialPropertyBlock s_GizmoProperties;
         private static RenderParams s_RenderParams;
 
+        private static readonly Vector3[] k_TRSPoints = new Vector3[k_MaxInstances];
+        private static NativeArray<Matrix4x4> s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
+
         private static readonly Quaternion[] k_SphereRotations = new Quaternion[]
         {
             Quaternion.identity,
@@ -42,7 +45,6 @@ namespace com.darktable.utility
             Quaternion.FromToRotation(Vector3.up, Vector3.forward),
         };
         private static readonly Vector3[] k_UnitCirclePoints = new Vector3[k_CircleSegments];
-        private static readonly Vector3[] k_TRSCirclePoints = new Vector3[k_CircleSegments];
 
         private static readonly Vector3[] k_UnitCubePoints = new Vector3[8]
         {
@@ -56,7 +58,6 @@ namespace com.darktable.utility
             new Vector3(-0.50f, -0.50f, -0.50f),
             new Vector3(0.50f, -0.50f, -0.50f),
         };
-        private static readonly Vector3[] k_TRSCubePoints = new Vector3[8];
 
         private static readonly Vector3[] k_UnitArrowPoints = new Vector3[4]
         {
@@ -65,7 +66,6 @@ namespace com.darktable.utility
             new Vector3(0.0f, 0.0f, 0.0f),
             new Vector3(-0.25f, 0.0f, -0.25f),
         };
-        private static readonly Vector3[] k_TRSArrowPoints = new Vector3[4];
 
         private static readonly Vector3[] k_UnitPointerPoints = new Vector3[8]
         {
@@ -78,9 +78,6 @@ namespace com.darktable.utility
             new Vector3(0.0f, 0.0f, 0.0f),
             new Vector3( 0.0f, -0.25f,-0.5f),
         };
-        private static readonly Vector3[] k_TRSPointerPoints = new Vector3[8];
-
-        private static NativeArray<Matrix4x4> s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         [Conditional(k_XRGizmosDefine)]
@@ -277,12 +274,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < k_CircleSegments; i++)
             {
-                k_TRSCirclePoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
             }
 
             for (var i = 0; i < k_CircleSegments; i++)
             {
-                TryGetLineMatrix(k_TRSCirclePoints[i], k_TRSCirclePoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
                 s_Matrices[i] = matrix;
             }
 
@@ -308,12 +305,12 @@ namespace com.darktable.utility
 
                 for (var i = 0; i < k_CircleSegments; i++)
                 {
-                    k_TRSCirclePoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
+                    k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
                 }
 
                 for (var i = 0; i < k_CircleSegments; i++)
                 {
-                    TryGetLineMatrix(k_TRSCirclePoints[i], k_TRSCirclePoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
                     s_Matrices[lines++] = matrix;
                 }
             }
@@ -338,7 +335,7 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 8; i++)
             {
-                k_TRSCubePoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
             }
 
             var lines = 0;
@@ -348,15 +345,15 @@ namespace com.darktable.utility
                 int j = (i + 1) % 4;
 
                 // "top" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[j], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[j], lineThickness, out var matrix);
                 s_Matrices[lines++] = matrix;
 
                 // "bottom" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i + 4], k_TRSCubePoints[j + 4], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i + 4], k_TRSPoints[j + 4], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
 
                 // "sides" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[i + 4], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 4], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
@@ -380,12 +377,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 4; i++)
             {
-                k_TRSArrowPoints[i] = trs.MultiplyPoint3x4(k_UnitArrowPoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitArrowPoints[i]);
             }
 
             for (var i = 0; i < 4; i++)
             {
-                TryGetLineMatrix(k_TRSArrowPoints[i], k_TRSArrowPoints[(i + 1) % 4], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % 4], lineThickness, out var matrix);
                 s_Matrices[i] = matrix;
             }
 
@@ -424,12 +421,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 8; i++)
             {
-                k_TRSPointerPoints[i] = trs.MultiplyPoint3x4(k_UnitPointerPoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitPointerPoints[i]);
             }
 
             for (var i = 0; i < 8; i += 2)
             {
-                TryGetLineMatrix(k_TRSPointerPoints[i], k_TRSPointerPoints[i + 1], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
@@ -592,7 +589,7 @@ namespace com.darktable.utility
 
                 for (var i = 0; i < 8; i++)
                 {
-                    k_TRSCubePoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
+                    k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
                 }
 
                 for (var i = 0; i < 4; i++)
@@ -600,15 +597,15 @@ namespace com.darktable.utility
                     int j = (i + 1) % 4;
 
                     // "top" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[j], lineThickness, out var matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[j], lineThickness, out var matrix);
                     s_Matrices[lines++] = matrix;
 
                     // "bottom" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i + 4], k_TRSCubePoints[j + 4], lineThickness, out matrix);
+                    TryGetLineMatrix(k_TRSPoints[i + 4], k_TRSPoints[j + 4], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
 
                     // "sides" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[i + 4], lineThickness, out matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 4], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
                 }
 
