@@ -27,7 +27,7 @@ namespace com.darktable.utility
         // All bets are off if this number isn't even.
         private const int k_CircleSegments = 24;
         private const int k_SphereSegments = k_CircleSegments * 3;
-        private const int k_HemisphereSegments = k_CircleSegments * 2;
+        private const int k_HemisphereSegments = (k_CircleSegments * 2) + 2;
         private const float k_LineThickness = 0.003f;
 
         private static Mesh s_SphereMesh;
@@ -352,36 +352,21 @@ namespace com.darktable.utility
                 k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
             }
 
-            Matrix4x4 matrix;
             var lines = 0;
-
-            for (var i = 0; i < k_CircleSegments; i++)
+            for (var i = 0; i < k_HemisphereSegments - 1; i++)
             {
-                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % k_CircleSegments], lineThickness, out matrix);
+                if (i == (int)(k_CircleSegments * 1.5f))
+                {
+                    // skip the line between end of first semicircle and start of second.
+                    continue;
+                }
+
+                var a = k_TRSPoints[i];
+                var b = k_TRSPoints[i + 1];
+
+                TryGetLineMatrix(a, b, lineThickness, out var matrix);
                 s_Matrices[lines++] = matrix;
             }
-
-            const int halfCircle = (int)(k_CircleSegments * 0.5f);
-            const int circleAndAHalf = halfCircle * 3;
-            for (int i = k_CircleSegments; i < circleAndAHalf - 1; i++)
-            {
-                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
-                s_Matrices[lines++] = matrix;
-            }
-
-            // FIXME: This is a bit of a hack to stitch up the last line in the hemisphere.
-            TryGetLineMatrix(k_TRSPoints[circleAndAHalf - 1], k_TRSPoints[halfCircle], lineThickness, out matrix);
-            s_Matrices[lines++] = matrix;
-
-            for (int i = circleAndAHalf; i < k_HemisphereSegments - 1; i++)
-            {
-                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
-                s_Matrices[lines++] = matrix;
-            }
-
-            // FIXME: This is a bit of a hack to stitch up the last line in the hemisphere.
-            TryGetLineMatrix(k_TRSPoints[k_HemisphereSegments - 1], k_TRSPoints[circleAndAHalf / 2], lineThickness, out matrix);
-            s_Matrices[lines++] = matrix;
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
         }
@@ -726,39 +711,37 @@ namespace com.darktable.utility
 
             var sphereRotations = new Quaternion[]
             {
-                Quaternion.identity,
-                Quaternion.FromToRotation(Vector3.up, Vector3.right),
-                Quaternion.FromToRotation(Vector3.up, Vector3.forward),
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.up),
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, -Vector3.right),
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.forward),
             };
 
-            Matrix4x4 matrix;
             var index = 0;
             for (var i = 0; i < 3; i++)
             {
-                matrix = Matrix4x4.TRS(Vector3.zero, sphereRotations[i], Vector3.one);
+                rotation = sphereRotations[i];
+                vector = i > 1 ? Vector3.right : Vector3.forward;
 
                 for (var j = 0; j < k_CircleSegments; j++)
                 {
-                    k_UnitSpherePoints[index++] = matrix.MultiplyPoint3x4(k_UnitCirclePoints[j]);
+                    k_UnitSpherePoints[index++] = vector;
+                    vector = rotation * vector;
                 }
             }
 
             index = 0;
-            for (var i = 0; i < k_CircleSegments; i++)
+            for (var i = 0; i < 3; i++)
             {
-                k_UnitHemiSpherePoints[index++] = k_UnitCirclePoints[i];
-            }
+                rotation = sphereRotations[i];
+                vector = i > 1 ? Vector3.right : Vector3.forward;
 
-            matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.FromToRotation(Vector3.up, -Vector3.right), Vector3.one);
-            for (var i = 0; i < k_CircleSegments / 2; i++)
-            {
-                k_UnitHemiSpherePoints[index++] = matrix.MultiplyPoint3x4(k_UnitCirclePoints[i]);
-            }
+                int count = i > 0 ? (k_CircleSegments / 2) + 1 : k_CircleSegments;
 
-            matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one);
-            for (int i = k_CircleSegments; i < (int)(k_CircleSegments * 1.5); i++)
-            {
-                k_UnitHemiSpherePoints[index++] = matrix.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
+                for (var j = 0; j < count; j++)
+                {
+                    k_UnitHemiSpherePoints[index++] = vector;
+                    vector = rotation * vector;
+                }
             }
         }
 
