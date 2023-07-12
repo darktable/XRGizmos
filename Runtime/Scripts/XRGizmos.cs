@@ -27,7 +27,7 @@ namespace com.darktable.utility
         // All bets are off if this number isn't even.
         private const int k_CircleSegments = 24;
         private const int k_SphereSegments = k_CircleSegments * 3;
-        private const int k_HemisphereSegments = (int) (k_CircleSegments * 1.5f);
+        private const int k_HemisphereSegments = k_CircleSegments * 2;
         private const float k_LineThickness = 0.003f;
 
         private static Mesh s_SphereMesh;
@@ -73,9 +73,9 @@ namespace com.darktable.utility
             new Vector3(0.0f, 0.0f, 0.0f),
             new Vector3(-0.25f, 0.0f, -0.5f),
             new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3( 0.0f, 0.25f,-0.5f),
+            new Vector3(0.0f, 0.25f, -0.5f),
             new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3( 0.0f, -0.25f,-0.5f),
+            new Vector3(0.0f, -0.25f, -0.5f),
         };
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -317,8 +317,8 @@ namespace com.darktable.utility
             {
                 for (var j = 0; j < k_CircleSegments; j++)
                 {
-                    var a = j + (i * k_CircleSegments);
-                    var b = a + 1;
+                    int a = j + (i * k_CircleSegments);
+                    int b = a + 1;
 
                     TryGetLineMatrix(k_TRSPoints[a], k_TRSPoints[b % (k_CircleSegments * (i + 1))], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
@@ -354,14 +354,33 @@ namespace com.darktable.utility
 
             Matrix4x4 matrix;
             var lines = 0;
-            for (var i = 0; i < k_HemisphereSegments - 1; i++)
+
+            for (var i = 0; i < k_CircleSegments; i++)
+            {
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % k_CircleSegments], lineThickness, out matrix);
+                s_Matrices[lines++] = matrix;
+            }
+
+            const int halfCircle = (int)(k_CircleSegments * 0.5f);
+            const int circleAndAHalf = halfCircle * 3;
+            for (int i = k_CircleSegments; i < circleAndAHalf - 1; i++)
             {
                 TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
             // FIXME: This is a bit of a hack to stitch up the last line in the hemisphere.
-            TryGetLineMatrix(k_TRSPoints[k_HemisphereSegments - 1], k_TRSPoints[k_CircleSegments / 2], lineThickness, out matrix);
+            TryGetLineMatrix(k_TRSPoints[circleAndAHalf - 1], k_TRSPoints[halfCircle], lineThickness, out matrix);
+            s_Matrices[lines++] = matrix;
+
+            for (int i = circleAndAHalf; i < k_HemisphereSegments - 1; i++)
+            {
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
+                s_Matrices[lines++] = matrix;
+            }
+
+            // FIXME: This is a bit of a hack to stitch up the last line in the hemisphere.
+            TryGetLineMatrix(k_TRSPoints[k_HemisphereSegments - 1], k_TRSPoints[circleAndAHalf / 2], lineThickness, out matrix);
             s_Matrices[lines++] = matrix;
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
@@ -731,10 +750,15 @@ namespace com.darktable.utility
             }
 
             matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.FromToRotation(Vector3.up, -Vector3.right), Vector3.one);
-
             for (var i = 0; i < k_CircleSegments / 2; i++)
             {
                 k_UnitHemiSpherePoints[index++] = matrix.MultiplyPoint3x4(k_UnitCirclePoints[i]);
+            }
+
+            matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0, 90, 0), Vector3.one);
+            for (int i = k_CircleSegments; i < (int)(k_CircleSegments * 1.5); i++)
+            {
+                k_UnitHemiSpherePoints[index++] = matrix.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
             }
         }
 
