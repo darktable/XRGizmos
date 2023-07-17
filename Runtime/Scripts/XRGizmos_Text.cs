@@ -42,14 +42,14 @@ namespace com.darktable.utility
             ['X'] = "00 88:08 80",
             ['Y'] = "08 45 88:45 40",
             ['Z'] = "08 88 00 80",
-            ['0'] = "00 80 88 08 00",
+            ['0'] = "00 06 28 88 82 60 00",
             ['1'] = "00 80:40 48 26",
             ['2'] = "08 88 84 04 00 80",
             ['3'] = "08 88 80 00:04 84",
             ['4'] = "08 04 84:88 80",
             ['5'] = "00 80 84 04 08 88",
             ['6'] = "08 00 80 84 04",
-            ['7'] = "08 88 80",
+            ['7'] = "08 88 86 54 50",
             ['8'] = "00 08 88 80 00:04 84",
             ['9'] = "80 88 08 04 84",
             ['.'] = "00 01 11 10 00",
@@ -87,7 +87,6 @@ namespace com.darktable.utility
         private static readonly Dictionary<char, IReadOnlyList<Vector3>> k_VectorFont = new Dictionary<char, IReadOnlyList<Vector3>>(k_ArcadeFont.Count);
         private static int s_LongestChar = 0;
 
-        private static readonly Vector3[] k_TRSTextPoints = new Vector3[k_MaxInstances];
         private static readonly Vector2 k_CursorShift = new Vector2(1.15f, 1.15f);
 
         [RuntimeInitializeOnLoadMethod]
@@ -165,14 +164,14 @@ namespace com.darktable.utility
 
             for (var i = 0; i < count; i++)
             {
-                k_TRSTextPoints[i] = trs.MultiplyPoint3x4(points[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(points[i]);
             }
 
             var lines = 0;
 
             for (var i = 0; i < count; i += 2)
             {
-                TryGetLineMatrix(k_TRSTextPoints[i], k_TRSTextPoints[i + 1], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out var matrix);
                 s_Matrices[lines++] = matrix;
             }
 
@@ -225,12 +224,12 @@ namespace com.darktable.utility
 
                 for (var i = 0; i < count; i++)
                 {
-                    k_TRSTextPoints[i] = trs.MultiplyPoint3x4(points[i]);
+                    k_TRSPoints[i] = trs.MultiplyPoint3x4(points[i]);
                 }
 
                 for (var i = 0; i < count; i += 2)
                 {
-                    TryGetLineMatrix(k_TRSTextPoints[i], k_TRSTextPoints[i + 1], lineThickness, out var matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out var matrix);
                     s_Matrices[lines++] = matrix;
 
                     if (lines + s_LongestChar >= k_MaxInstances)

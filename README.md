@@ -23,6 +23,8 @@ It also offers several new methods for other useful shapes:
   * 2d direction indicator
 * DrawPointer
   * A ray with an arrow at the end
+* DrawWireHemisphere
+  * Half a sphere
 * DrawAxis
   * Draw the up, right, and forward axes of a transform
 * DrawString

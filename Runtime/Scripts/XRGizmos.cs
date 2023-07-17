@@ -24,7 +24,10 @@ namespace com.darktable.utility
         // Make sure this property matches the name of the Color/Tint property in the shader
         private static readonly int k_ColorID = Shader.PropertyToID("_Color");
 
+        // All bets are off if this number isn't even.
         private const int k_CircleSegments = 24;
+        private const int k_SphereSegments = k_CircleSegments * 3;
+        private const int k_HemisphereSegments = (k_CircleSegments * 2) + 2;
         private const float k_LineThickness = 0.003f;
 
         private static Mesh s_SphereMesh;
@@ -35,14 +38,12 @@ namespace com.darktable.utility
         private static MaterialPropertyBlock s_GizmoProperties;
         private static RenderParams s_RenderParams;
 
-        private static readonly Quaternion[] k_SphereRotations = new Quaternion[]
-        {
-            Quaternion.identity,
-            Quaternion.FromToRotation(Vector3.up, Vector3.right),
-            Quaternion.FromToRotation(Vector3.up, Vector3.forward),
-        };
+        private static readonly Vector3[] k_TRSPoints = new Vector3[k_MaxInstances];
+        private static NativeArray<Matrix4x4> s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
+
         private static readonly Vector3[] k_UnitCirclePoints = new Vector3[k_CircleSegments];
-        private static readonly Vector3[] k_TRSCirclePoints = new Vector3[k_CircleSegments];
+        private static readonly Vector3[] k_UnitSpherePoints = new Vector3[k_SphereSegments];
+        private static readonly Vector3[] k_UnitHemiSpherePoints = new Vector3[k_HemisphereSegments];
 
         private static readonly Vector3[] k_UnitCubePoints = new Vector3[8]
         {
@@ -56,7 +57,6 @@ namespace com.darktable.utility
             new Vector3(-0.50f, -0.50f, -0.50f),
             new Vector3(0.50f, -0.50f, -0.50f),
         };
-        private static readonly Vector3[] k_TRSCubePoints = new Vector3[8];
 
         private static readonly Vector3[] k_UnitArrowPoints = new Vector3[4]
         {
@@ -65,7 +65,6 @@ namespace com.darktable.utility
             new Vector3(0.0f, 0.0f, 0.0f),
             new Vector3(-0.25f, 0.0f, -0.25f),
         };
-        private static readonly Vector3[] k_TRSArrowPoints = new Vector3[4];
 
         private static readonly Vector3[] k_UnitPointerPoints = new Vector3[8]
         {
@@ -74,13 +73,10 @@ namespace com.darktable.utility
             new Vector3(0.0f, 0.0f, 0.0f),
             new Vector3(-0.25f, 0.0f, -0.5f),
             new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3( 0.0f, 0.25f,-0.5f),
+            new Vector3(0.0f, 0.25f, -0.5f),
             new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3( 0.0f, -0.25f,-0.5f),
+            new Vector3(0.0f, -0.25f, -0.5f),
         };
-        private static readonly Vector3[] k_TRSPointerPoints = new Vector3[8];
-
-        private static NativeArray<Matrix4x4> s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         [Conditional(k_XRGizmosDefine)]
@@ -120,14 +116,7 @@ namespace com.darktable.utility
                 reflectionProbeUsage = ReflectionProbeUsage.Off,
             };
 
-            var vector = Vector3.forward;
-            var rotation = Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.up);
-
-            for (var i = 0; i < k_CircleSegments; i++)
-            {
-                k_UnitCirclePoints[i] = vector;
-                vector = rotation * vector;
-            }
+            BuildCircleData();
 
             Application.quitting += OnApplicationQuitting;
         }
@@ -277,12 +266,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < k_CircleSegments; i++)
             {
-                k_TRSCirclePoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
             }
 
             for (var i = 0; i < k_CircleSegments; i++)
             {
-                TryGetLineMatrix(k_TRSCirclePoints[i], k_TRSCirclePoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
                 s_Matrices[i] = matrix;
             }
 
@@ -299,23 +288,84 @@ namespace com.darktable.utility
         [Conditional(k_XRGizmosDefine)]
         public static void DrawWireSphere(Vector3 center, float radius, Color color, float lineThickness = k_LineThickness)
         {
+            DrawWireSphere(center, Quaternion.identity, radius, color, lineThickness);
+        }
+
+        /// <summary>
+        ///   <para>Draws a wireframe sphere with center, rotation and radius.</para>
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="rotation"></param>
+        /// <param name="radius"></param>
+        /// <param name="color"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawWireSphere(Vector3 center, Quaternion rotation, float radius, Color color, float lineThickness = k_LineThickness)
+        {
             s_GizmoProperties.SetColor(k_ColorID, color);
 
-            var lines = 0;
-            foreach (var rotation in k_SphereRotations)
+            var trs = Matrix4x4.TRS(center, rotation, new Vector3(radius, radius, radius));
+
+            for (var i = 0; i < k_SphereSegments; i++)
             {
-                var trs = Matrix4x4.TRS(center, rotation, new Vector3(radius, radius, radius));
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitSpherePoints[i]);
+            }
 
-                for (var i = 0; i < k_CircleSegments; i++)
+            Matrix4x4 matrix;
+            var lines = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                for (var j = 0; j < k_CircleSegments; j++)
                 {
-                    k_TRSCirclePoints[i] = trs.MultiplyPoint3x4(k_UnitCirclePoints[i]);
-                }
+                    int a = j + (i * k_CircleSegments);
+                    int b = a + 1;
 
-                for (var i = 0; i < k_CircleSegments; i++)
-                {
-                    TryGetLineMatrix(k_TRSCirclePoints[i], k_TRSCirclePoints[(i + 1) % k_CircleSegments], lineThickness, out var matrix);
+                    TryGetLineMatrix(k_TRSPoints[a], k_TRSPoints[b % (k_CircleSegments * (i + 1))], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
                 }
+            }
+
+            // FIXME: This is a bit of a hack to stitch up the last line in the sphere.
+            TryGetLineMatrix(k_TRSPoints[k_SphereSegments - 1], k_TRSPoints[k_CircleSegments * 2], lineThickness, out matrix);
+            s_Matrices[lines - 1] = matrix;
+
+            Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
+        }
+
+        /// <summary>
+        ///   <para>Draws a wireframe hemisphere with center, rotation and radius.</para>
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="rotation"></param>
+        /// <param name="radius"></param>
+        /// <param name="color"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawWireHemisphere(Vector3 center, Quaternion rotation, float radius, Color color, float lineThickness = k_LineThickness)
+        {
+            s_GizmoProperties.SetColor(k_ColorID, color);
+
+            var trs = Matrix4x4.TRS(center, rotation, new Vector3(radius, radius, radius));
+
+            for (var i = 0; i < k_HemisphereSegments; i++)
+            {
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
+            }
+
+            var lines = 0;
+            for (var i = 0; i < k_HemisphereSegments - 1; i++)
+            {
+                if (i == (int)(k_CircleSegments * 1.5f))
+                {
+                    // skip the line between end of first semicircle and start of second.
+                    continue;
+                }
+
+                var a = k_TRSPoints[i];
+                var b = k_TRSPoints[i + 1];
+
+                TryGetLineMatrix(a, b, lineThickness, out var matrix);
+                s_Matrices[lines++] = matrix;
             }
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
@@ -338,7 +388,7 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 8; i++)
             {
-                k_TRSCubePoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
             }
 
             var lines = 0;
@@ -348,15 +398,15 @@ namespace com.darktable.utility
                 int j = (i + 1) % 4;
 
                 // "top" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[j], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[j], lineThickness, out var matrix);
                 s_Matrices[lines++] = matrix;
 
                 // "bottom" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i + 4], k_TRSCubePoints[j + 4], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i + 4], k_TRSPoints[j + 4], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
 
                 // "sides" of the cube
-                TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[i + 4], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 4], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
@@ -380,12 +430,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 4; i++)
             {
-                k_TRSArrowPoints[i] = trs.MultiplyPoint3x4(k_UnitArrowPoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitArrowPoints[i]);
             }
 
             for (var i = 0; i < 4; i++)
             {
-                TryGetLineMatrix(k_TRSArrowPoints[i], k_TRSArrowPoints[(i + 1) % 4], lineThickness, out var matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % 4], lineThickness, out var matrix);
                 s_Matrices[i] = matrix;
             }
 
@@ -424,12 +474,12 @@ namespace com.darktable.utility
 
             for (var i = 0; i < 8; i++)
             {
-                k_TRSPointerPoints[i] = trs.MultiplyPoint3x4(k_UnitPointerPoints[i]);
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitPointerPoints[i]);
             }
 
             for (var i = 0; i < 8; i += 2)
             {
-                TryGetLineMatrix(k_TRSPointerPoints[i], k_TRSPointerPoints[i + 1], lineThickness, out matrix);
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 1], lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
@@ -592,7 +642,7 @@ namespace com.darktable.utility
 
                 for (var i = 0; i < 8; i++)
                 {
-                    k_TRSCubePoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
+                    k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitCubePoints[i]);
                 }
 
                 for (var i = 0; i < 4; i++)
@@ -600,15 +650,15 @@ namespace com.darktable.utility
                     int j = (i + 1) % 4;
 
                     // "top" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[j], lineThickness, out var matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[j], lineThickness, out var matrix);
                     s_Matrices[lines++] = matrix;
 
                     // "bottom" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i + 4], k_TRSCubePoints[j + 4], lineThickness, out matrix);
+                    TryGetLineMatrix(k_TRSPoints[i + 4], k_TRSPoints[j + 4], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
 
                     // "sides" of the cube
-                    TryGetLineMatrix(k_TRSCubePoints[i], k_TRSCubePoints[i + 4], lineThickness, out matrix);
+                    TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[i + 4], lineThickness, out matrix);
                     s_Matrices[lines++] = matrix;
                 }
 
@@ -646,6 +696,53 @@ namespace com.darktable.utility
 
             matrix = Matrix4x4.TRS(rayPosition, rayRotation, rayScale);
             return true;
+        }
+
+        private static void BuildCircleData()
+        {
+            var vector = Vector3.forward;
+            var rotation = Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.up);
+
+            for (var i = 0; i < k_CircleSegments; i++)
+            {
+                k_UnitCirclePoints[i] = vector;
+                vector = rotation * vector;
+            }
+
+            var sphereRotations = new Quaternion[]
+            {
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.up),
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, -Vector3.right),
+                Quaternion.AngleAxis(360.0f / k_CircleSegments, Vector3.forward),
+            };
+
+            var index = 0;
+            for (var i = 0; i < 3; i++)
+            {
+                rotation = sphereRotations[i];
+                vector = i > 1 ? Vector3.right : Vector3.forward;
+
+                for (var j = 0; j < k_CircleSegments; j++)
+                {
+                    k_UnitSpherePoints[index++] = vector;
+                    vector = rotation * vector;
+                }
+            }
+
+            index = 0;
+            for (var i = 0; i < 3; i++)
+            {
+                rotation = sphereRotations[i];
+                vector = i > 1 ? Vector3.right : Vector3.forward;
+
+                int count = i > 0 ? (k_CircleSegments / 2) + 1 : k_CircleSegments;
+
+                for (var j = 0; j < count; j++)
+                {
+                    k_UnitHemiSpherePoints[index++] = vector;
+                    vector = rotation * vector;
+                }
+            }
         }
 
         private static void OnApplicationQuitting()
