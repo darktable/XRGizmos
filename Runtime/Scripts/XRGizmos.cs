@@ -58,6 +58,14 @@ namespace com.darktable.utility
             new Vector3(0.50f, -0.50f, -0.50f),
         };
 
+        private static readonly Vector3[] k_UnitRectanglePoints = new Vector3[4]
+        {
+            new Vector3(-0.50f, 0.00f, -0.50f),
+            new Vector3(-0.50f, 0.00f, 0.50f),
+            new Vector3(0.50f, 0.00f, 0.50f),
+            new Vector3(0.50f, 0.00f, -0.50f),
+        };
+
         private static readonly Vector3[] k_UnitArrowPoints = new Vector3[4]
         {
             new Vector3(0.0f, 0.0f, 0.50f),
@@ -276,6 +284,35 @@ namespace com.darktable.utility
             }
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, k_CircleSegments);
+        }
+
+        /// <summary>
+        ///   <para>Draws a rectangle with position, rotation and scale.</para>
+        /// </summary>
+        /// <param name="center"></param>
+        /// <param name="rotation"></param>
+        /// <param name="scale"></param>
+        /// <param name="color"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawRectangle(Vector3 center, Quaternion rotation, Vector2 scale, Color color, float lineThickness = k_LineThickness)
+        {
+            s_GizmoProperties.SetColor(k_ColorID, color);
+
+            var trs = Matrix4x4.TRS(center, rotation, new Vector3(scale.x, 1, scale.y));
+
+            for (var i = 0; i < 4; i++)
+            {
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_UnitRectanglePoints[i]);
+            }
+
+            for (var i = 0; i < 4; i++)
+            {
+                TryGetLineMatrix(k_TRSPoints[i], k_TRSPoints[(i + 1) % 4], lineThickness, out var matrix);
+                s_Matrices[i] = matrix;
+            }
+
+            Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, 4);
         }
 
         /// <summary>
