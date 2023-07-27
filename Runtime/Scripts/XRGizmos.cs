@@ -313,7 +313,7 @@ namespace com.darktable.utility
 
             Matrix4x4 matrix;
             var lines = 0;
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
                 for (var j = 0; j < k_CircleSegments; j++)
                 {
@@ -365,6 +365,85 @@ namespace com.darktable.utility
                 var b = k_TRSPoints[i + 1];
 
                 TryGetLineMatrix(a, b, lineThickness, out var matrix);
+                s_Matrices[lines++] = matrix;
+            }
+
+            Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
+        }
+
+        public static void DrawWireCapsule(Vector3 center, Quaternion rotation, float radius, float height, Color color, float lineThickness = k_LineThickness)
+        {
+            s_GizmoProperties.SetColor(k_ColorID, color);
+
+            var offset = new Vector3(0, Mathf.Max(0, height * 0.5f - radius), 0);
+
+            // top of capsule
+            var index = 0;
+            var trs = Matrix4x4.TRS(offset, Quaternion.identity,new Vector3(radius, radius, radius));
+            for (var i = 0; i < k_HemisphereSegments; i++)
+            {
+                k_TRSPoints[index++] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
+            }
+
+            // bottom of capsule
+            trs = Matrix4x4.TRS(-offset,Quaternion.Euler(180, 0, 0), new Vector3(radius, radius, radius));
+            for (var i = 0; i < k_HemisphereSegments; i++)
+            {
+                k_TRSPoints[index++] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
+            }
+
+            // lines down the side
+            var top = new Vector3(radius, offset.y, 0);
+            var bottom = new Vector3(radius, -offset.y, 0);
+
+            var rotateLine = Quaternion.AngleAxis(90, Vector3.up);
+
+            for (var i = 0; i < 4; i++)
+            {
+                top = rotateLine * top;
+                bottom = rotateLine * bottom;
+
+                k_TRSPoints[index++] = top;
+                k_TRSPoints[index++] = bottom;
+            }
+
+            trs = Matrix4x4.TRS(center, rotation, Vector3.one);
+
+            // now apply the transforms from the center + rotation.
+            for (int i = 0; i < index; i++)
+            {
+                k_TRSPoints[i] = trs.MultiplyPoint3x4(k_TRSPoints[i]);
+            }
+
+            Matrix4x4 matrix;
+            var lines = 0;
+
+            // generate lines for the caps
+            for (var i = 0; i < (k_HemisphereSegments * 2) - 1; i++)
+            {
+                // skip lines
+                if (i == (int)(k_CircleSegments * 1.5f) // first semicircle to second
+                    || i == (k_CircleSegments * 2) + 1 // first hemisphere to second
+                    || i == (int)(k_CircleSegments * 3.5f) + 2) // third semicircle to fourth
+                {
+                    continue;
+                }
+
+                var a = k_TRSPoints[i];
+                var b = k_TRSPoints[i + 1];
+
+                TryGetLineMatrix(a, b, lineThickness, out matrix);
+                s_Matrices[lines++] = matrix;
+            }
+
+            // draw the lines on the side
+            const int shift = k_HemisphereSegments * 2;
+            for (var i = 0; i < 8; i += 2)
+            {
+                var a = k_TRSPoints[i + shift];
+                var b = k_TRSPoints[i + 1 + shift];
+
+                TryGetLineMatrix(a, b, lineThickness, out matrix);
                 s_Matrices[lines++] = matrix;
             }
 
