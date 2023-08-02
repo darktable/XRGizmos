@@ -7,6 +7,35 @@ namespace com.darktable.utility
     public static partial class XRGizmos
     {
         /// <summary>
+        ///   <para>Draws collider based on type.</para>
+        /// </summary>
+        /// <param name="collider"></param>
+        /// <param name="color"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawCollider(Collider collider, Color color, float lineThickness = k_LineThickness)
+        {
+            switch (collider)
+            {
+                case BoxCollider boxCollider:
+                    DrawCollider(boxCollider, color, lineThickness);
+                    break;
+                case SphereCollider sphereCollider:
+                    DrawCollider(sphereCollider, color, lineThickness);
+                    break;
+                case MeshCollider meshCollider:
+                    DrawCollider(meshCollider, color, lineThickness);
+                    break;
+                case CapsuleCollider capsuleCollider:
+                    DrawCollider(capsuleCollider, color, lineThickness);
+                    break;
+                default:
+                    DrawColliderBounds(collider, color, lineThickness);
+                    break;
+            }
+        }
+
+        /// <summary>
         ///   <para>Draws a wire frame box collider.</para>
         /// </summary>
         /// <param name="collider"></param>
