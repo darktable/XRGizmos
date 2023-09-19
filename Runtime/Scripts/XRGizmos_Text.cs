@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 
-namespace com.darktable.utility
+namespace Utilities.XR
 {
     public static partial class XRGizmos
     {

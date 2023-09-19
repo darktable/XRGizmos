@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-namespace com.darktable.utility
+namespace Utilities.XR
 {
     public static partial class XRGizmos
     {

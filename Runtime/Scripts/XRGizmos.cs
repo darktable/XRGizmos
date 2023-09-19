@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace com.darktable.utility
+namespace Utilities.XR
 {
     public static partial class XRGizmos
     {
@@ -629,11 +629,12 @@ namespace com.darktable.utility
         /// <param name="points"></param>
         /// <param name="color"></param>
         /// <param name="closeLoop"></param>
+        /// <param name="lineCount"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
-        public static void DrawLineList(IReadOnlyList<Vector3> points, Color color, bool closeLoop = false, float lineThickness = k_LineThickness)
+        public static void DrawLineList(IReadOnlyList<Vector3> points, Color color, bool closeLoop = false, int lineCount = -1, float lineThickness = k_LineThickness)
         {
-            if (points.Count < 2)
+            if (points == null || points.Count < 2)
             {
                 return;
             }
@@ -641,7 +642,7 @@ namespace com.darktable.utility
             s_GizmoProperties.SetColor(k_ColorID, color);
 
             var lines = 0;
-            int count = points.Count;
+            int count = lineCount <= 0 ? points.Count : lineCount;
 
             for (var i = 1; i < count; i++)
             {
@@ -675,9 +676,10 @@ namespace com.darktable.utility
         /// <param name="points"></param>
         /// <param name="color"></param>
         /// <param name="size"></param>
+        /// <param name="pointCount"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
-        public static void DrawPointSet(IReadOnlyList<Vector3> points, Color color, float size = 0.1f, float lineThickness = k_LineThickness)
+        public static void DrawPointSet(IReadOnlyList<Vector3> points, Color color, float size = 0.1f, int pointCount = -1, float lineThickness = k_LineThickness)
         {
             if (points == null || points.Count == 0)
             {
@@ -686,7 +688,7 @@ namespace com.darktable.utility
 
             s_GizmoProperties.SetColor(k_ColorID, color);
 
-            int count = points.Count;
+            int count = pointCount <= 0 ? points.Count : pointCount;
             var lines = 0;
             var offsetX = Vector3.right * (size * 0.5f);
             var offsetY = Vector3.up * (size * 0.5f);
@@ -736,9 +738,10 @@ namespace com.darktable.utility
         /// <param name="rotation"></param>
         /// <param name="size"></param>
         /// <param name="color"></param>
+        /// <param name="pointCount"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
-        public static void DrawWireCubes(IReadOnlyList<Vector3> points, Quaternion rotation, Vector3 size, Color color, float lineThickness = k_LineThickness)
+        public static void DrawWireCubes(IReadOnlyList<Vector3> points, Quaternion rotation, Vector3 size, Color color, int pointCount = -1, float lineThickness = k_LineThickness)
         {
             if (points == null || points.Count == 0)
             {
@@ -747,7 +750,7 @@ namespace com.darktable.utility
 
             s_GizmoProperties.SetColor(k_ColorID, color);
 
-            int count = points.Count;
+            int count = pointCount <= 0 ? points.Count : pointCount;
             var lines = 0;
 
             for (var p = 0; p < count; p++)
