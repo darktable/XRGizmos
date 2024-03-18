@@ -1,6 +1,6 @@
 {
   "name": "com.darktable.xrgizmos",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "displayName": "XR Gizmos",
   "description": "Set of gizmos that render in AR/VR.",
   "unity": "2022.3",

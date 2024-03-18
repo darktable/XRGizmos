@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -158,15 +159,10 @@ namespace Utilities.XR
         /// <param name="length"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DrawRay(Vector3 from, Vector3 direction, Color color, float length = 1f, float lineThickness = k_LineThickness)
         {
-            if (direction == Vector3.zero)
-                return;
-
-            var ray = new Ray(from, direction);
-            var end = ray.GetPoint(length);
-
-            DrawLine(from, end, color, lineThickness);
+            DrawRay(new Ray(from, direction), color, length, lineThickness);
         }
 
         /// <summary>
@@ -177,6 +173,7 @@ namespace Utilities.XR
         /// <param name="length"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void DrawRay(Ray ray, Color color, float length = 1f, float lineThickness = k_LineThickness)
         {
             if (ray.direction == Vector3.zero)
@@ -416,14 +413,14 @@ namespace Utilities.XR
 
             // top of capsule
             var index = 0;
-            var trs = Matrix4x4.TRS(offset, Quaternion.identity,new Vector3(radius, radius, radius));
+            var trs = Matrix4x4.TRS(offset, Quaternion.identity, new Vector3(radius, radius, radius));
             for (var i = 0; i < k_HemisphereSegments; i++)
             {
                 k_TRSPoints[index++] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
             }
 
             // bottom of capsule
-            trs = Matrix4x4.TRS(-offset,Quaternion.Euler(180, 0, 0), new Vector3(radius, radius, radius));
+            trs = Matrix4x4.TRS(-offset, Quaternion.Euler(180, 0, 0), new Vector3(radius, radius, radius));
             for (var i = 0; i < k_HemisphereSegments; i++)
             {
                 k_TRSPoints[index++] = trs.MultiplyPoint3x4(k_UnitHemiSpherePoints[i]);
@@ -561,14 +558,16 @@ namespace Utilities.XR
         /// <summary>
         ///   <para>Draw a ray with an arrow at the end.</para>
         /// </summary>
-        /// <param name="from"></param>
-        /// <param name="direction"></param>
+        /// <param name="ray"></param>
         /// <param name="color"></param>
         /// <param name="scale"></param>
         /// <param name="lineThickness"></param>
         [Conditional(k_XRGizmosDefine)]
-        public static void DrawPointer(Vector3 from, Vector3 direction, Color color, float scale = 1.0f, float lineThickness = k_LineThickness)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DrawPointer(Ray ray, Color color, float scale = 1.0f, float lineThickness = k_LineThickness)
         {
+            var direction = ray.direction;
+
             if (direction == Vector3.zero)
             {
                 return;
@@ -576,9 +575,8 @@ namespace Utilities.XR
 
             s_GizmoProperties.SetColor(k_ColorID, color);
 
-            var ray = new Ray(from, direction);
+            var from = ray.origin;
             var end = ray.GetPoint(scale);
-
             var lines = 0;
 
             TryGetLineMatrix(from, end, lineThickness, out var matrix);
@@ -600,6 +598,21 @@ namespace Utilities.XR
             }
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
+        }
+
+        /// <summary>
+        ///   <para>Draw a ray with an arrow at the end.</para>
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="direction"></param>
+        /// <param name="color"></param>
+        /// <param name="scale"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void DrawPointer(Vector3 from, Vector3 direction, Color color, float scale = 1.0f, float lineThickness = k_LineThickness)
+        {
+            DrawPointer(new Ray(from, direction), color, scale, lineThickness);
         }
 
         /// <summary>
@@ -868,6 +881,49 @@ namespace Utilities.XR
         {
             Application.quitting -= OnApplicationQuitting;
             s_Matrices.Dispose();
+        }
+
+        /// <summary>
+        ///   <para>Draw pairs of points as line segments.</para>
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="color"></param>
+        /// <param name="lineCount"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawLineSegments(IReadOnlyList<Vector3> points, Color color, int lineCount = -1, float lineThickness = k_LineThickness)
+        {
+            if (points == null || points.Count < 2)
+            {
+                return;
+            }
+
+            s_GizmoProperties.SetColor(k_ColorID, color);
+
+            var lines = 0;
+            int count = lineCount <= 0 ? points.Count : lineCount;
+
+            // make sure number is even
+            count -= count % 2;
+
+            for (var i = 1; i < count; i += 2)
+            {
+                TryGetLineMatrix(points[i - 1], points[i], lineThickness, out var matrix);
+                s_Matrices[lines++] = matrix;
+
+                if (lines + 2 >= k_MaxInstances)
+                {
+                    Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
+                    lines = 0;
+                }
+            }
+
+            if (lines == 0)
+            {
+                return;
+            }
+
+            Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
         }
     }
 }
