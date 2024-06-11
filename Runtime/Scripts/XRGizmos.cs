@@ -624,15 +624,27 @@ namespace Utilities.XR
         [Conditional(k_XRGizmosDefine)]
         public static void DrawAxis(Transform transform, float length = 0.25f, float lineThickness = k_LineThickness)
         {
-            var pos = transform.position;
+            var pose = new Pose(transform.position, transform.rotation);
 
-            var ray = new Ray(pos, transform.up);
+            DrawAxis(pose, length, lineThickness);
+        }
+
+        /// <summary>
+        ///   <para>Draw an axis representing a pose.</para>
+        /// </summary>
+        /// <param name="pose"></param>
+        /// <param name="length"></param>
+        /// <param name="lineThickness"></param>
+        [Conditional(k_XRGizmosDefine)]
+        public static void DrawAxis(Pose pose, float length = 0.25f, float lineThickness = k_LineThickness)
+        {
+            var ray = new Ray(pose.position, pose.up);
             DrawRay(ray, Color.green, length, lineThickness);
 
-            ray.direction = transform.right;
+            ray.direction = pose.right;
             DrawRay(ray, Color.red, length, lineThickness);
 
-            ray.direction = transform.forward;
+            ray.direction = pose.forward;
             DrawRay(ray, Color.blue, length, lineThickness);
         }
 
