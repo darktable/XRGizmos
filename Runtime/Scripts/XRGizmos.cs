@@ -937,5 +937,43 @@ namespace Utilities.XR
 
             Graphics.RenderMeshInstanced(s_RenderParams, s_CubeMesh, 0, s_Matrices, lines);
         }
+
+        /// <summary>
+        ///   <para>Draws a rectangle that lies on the provided plane and a normal</para>
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="plane"></param>
+        /// <param name="size"></param>
+        /// <param name="color"></param>
+        /// <param name="lineThickness"></param>
+        public static void DrawPlane(Vector3 point, Plane plane, float size, Color color, float lineThickness = k_LineThickness)
+        {
+            // Project the point onto the plane so the rect actually lies on it
+            Vector3 center = plane.ClosestPointOnPlane(point);
+            Vector3 normal = plane.normal;
+
+            // Build a tangent basis on the plane
+            Vector3 tangent = Vector3.Cross(normal, Vector3.up).normalized;
+            if (tangent.sqrMagnitude < 0.001f)
+                tangent = Vector3.Cross(normal, Vector3.right).normalized;
+            Vector3 bitangent = Vector3.Cross(normal, tangent);
+
+            float half = size * 0.5f;
+
+            // Four corners of the rectangle
+            var tl = center - tangent * half + bitangent * half;
+            var tr = center + tangent * half + bitangent * half;
+            var br = center + tangent * half - bitangent * half;
+            var bl = center - tangent * half - bitangent * half;
+
+            // Draw the rectangle
+            DrawLine(tl, tr, color, lineThickness);
+            DrawLine(tr, br, color, lineThickness);
+            DrawLine(br, bl, color, lineThickness);
+            DrawLine(bl, tl, color, lineThickness);
+
+            // Draw the normal
+            DrawLine(center, center + normal * 0.25f, Color.white, lineThickness);
+        }
     }
 }
