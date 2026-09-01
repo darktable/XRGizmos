@@ -40,7 +40,7 @@ namespace Utilities.XR
         private static RenderParams s_RenderParams;
 
         private static readonly Vector3[] k_TRSPoints = new Vector3[k_MaxInstances];
-        private static NativeArray<Matrix4x4> s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
+        private static NativeArray<Matrix4x4> s_Matrices;
 
         private static readonly Vector3[] k_UnitCirclePoints = new Vector3[k_CircleSegments];
         private static readonly Vector3[] k_UnitSpherePoints = new Vector3[k_SphereSegments];
@@ -126,6 +126,11 @@ namespace Utilities.XR
             };
 
             BuildCircleData();
+
+            if (!s_Matrices.IsCreated)
+            {
+                s_Matrices = new NativeArray<Matrix4x4>(k_MaxInstances, Allocator.Persistent);
+            }
 
             Application.quitting += OnApplicationQuitting;
         }
@@ -892,7 +897,10 @@ namespace Utilities.XR
         private static void OnApplicationQuitting()
         {
             Application.quitting -= OnApplicationQuitting;
-            s_Matrices.Dispose();
+            if (s_Matrices.IsCreated)
+            {
+                s_Matrices.Dispose();
+            }
         }
 
         /// <summary>
